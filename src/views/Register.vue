@@ -1,77 +1,119 @@
-// eslint-disable-next-line vue/multi-word-component-names
 <template>
-   <div class="login">
-       <h2>Create Account</h2>
-       <h3>Enter Your Credentials</h3>
-       <div class="login-form">
-           <div class="textbox">
-               <input type="email" placeholder="Username" v-model="email">
-               <span class="material-symbols-outlined">account_circle</span>
-           </div>
-           <div class="textbox">
-               <input type="password" placeholder="Password" v-model="password">
-               <span class="material-symbols-outlined">
-                   lock
-               </span>
-           </div>
-           <button @click="register" class="button">Submit</button>
-           <a href="/sign-in">Or login to Your account</a>
-       </div>
-   </div>
+  <Form @submit="onSubmit" class="login" :validation-schema="schema">
+    <h2> Create Account</h2>
+    <h3>Enter Your Credentials</h3>
+    <div class="login-form">
+      <div class="textbox">
+        <Field name="email" type="text" placeholder="Email" v-model="email"/>
+        <span class="material-symbols-outlined">account_circle</span>
+      </div>
+       <ErrorMessage class="error" name="email"/>
+      <div class="textbox">
+        <Field name="password" type="password" placeholder="Password" v-model="password"/>
+        <span class="material-symbols-outlined">lock</span>
+      </div>
+      <ErrorMessage class="error" name="password"/>
+        <button class="button">Create Account</button>
+        <a href="/sign-in">Or login to Your account</a>
+    </div>
+  </Form>
 </template>
 
-
 <script setup>
+import { Form, Field, ErrorMessage } from 'vee-validate';
 import {ref} from 'vue'
-import {getAuth, createUserWithEmailAndPassword} from 'firebase/auth'
+import {createUserWithEmailAndPassword, getAuth} from 'firebase/auth'
 import {useRouter} from 'vue-router'
+import * as yup from 'yup'
 
+const schema = yup.object({
+  email: yup.string().required().email(),
+  password: yup.string().required().min(8),
+});
+
+const router = useRouter()
+const errorMsg = ref()
 const email = ref("")
 const password = ref("")
-const router = useRouter()
 
-const register = () => {
-    createUserWithEmailAndPassword(getAuth(), email.value, password.value)
-    // eslint-disable-next-line no-unused-vars
-    .then((data) => {
-        console.log("succesfull reg")
-        router.push('/idk')
-    })
-    .catch((error) => {
-        console.log(error.code)
-        alert(error.message)
-    })
+const onSubmit = () => {
+  createUserWithEmailAndPassword(getAuth(), email.value, password.value)
+        // eslint-disable-next-line no-unused-vars
+        .then((data) => {
+          router.push('/feed')
+        })
+          .catch((error) => {
+          alert(error.code)
+          switch (error.code){
+            case "auth/invalid-email":
+              errorMsg.value = 'Invalid emmail';
+              break;
+            case "auth/user-not-found":
+              errorMsg.value = 'No account with thath email was fount';
+              break;
+            case "auth/wrong-password":
+              errorMsg.value = "incorrect password";
+              break;
+            default:
+              errorMsg.value = "Email or password was incorect";
+              break;
+          }
+      })
 }
 </script>
 
 <style lang="scss" scoped>
-* {box-sizing: border-box;}
-template {height: 100%;}
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+.wrapper {
+  height: 100%;
+}
 
 @keyframes gradient {
   100% {
-    background-size: 4000px 1000px;
+    background-size: 40px 10px;
+  }
+}
+
+@media (max-width: 500px) {
+  body {
+    padding: 0;
   }
 }
 
 .login {
   position: fixed;
   z-index: 3;
-  top: 40%;
+  top: 50%;
   left: 50%;
   translate: -50% -50%;
-  width: 90%;
+  width: 380px;
   padding: 70px 30px 44px;
   border-radius: 22px;
   background: #161616;
   text-align: center;
+  margin: 5% 0;
+
 }
 
-@media (width >= 450px) {
+@media (max-width: 500px) {
   .login {
-    width: 380px;
+    width: 380px; 
+    max-height: calc(110vh - 100px);
+    overflow-y: auto; }
   }
+
+@media (max-height: 520px) {
+  .login {
+    width: 380px; 
+    max-height: calc(110vh - 100px);
+    overflow-y: auto; }
 }
+
 
 .login > h2 {
   font-size: 36px;
@@ -109,7 +151,6 @@ template {height: 100%;}
 
 .login-form input,
 .login-form button {
-  
   width: 100%;
   height: 60px;
   outline: none;
